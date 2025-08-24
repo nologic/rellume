@@ -124,7 +124,13 @@ bool ll_config_set_architecture(LLConfig* cfg, const char *s) {
         unwrap(cfg)->arch = rellume::Arch::AArch64;
         unwrap(cfg)->callconv = rellume::CallConv::AArch64_SPTR;
         return true;
-#endif // RELLUME_WITH_AARCH64
+#endif // RELLUME_WITH_MIPSEL32
+    } else if (!strcmp(s, "mipsel32")) {
+#ifdef RELLUME_WITH_MIPSEL32
+        unwrap(cfg)->arch = rellume::Arch::MIPSel32;
+        unwrap(cfg)->callconv = rellume::CallConv::MIPSel32_SPTR;
+        return true;
+#endif // RELLUME_WITH_MIPSEL32
     }
     return false;
 }
