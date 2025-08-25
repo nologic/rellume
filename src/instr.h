@@ -40,8 +40,26 @@
 #include <optional>
 
 #include "arch.h"
+#include "lifter-base.h"
+
+// LLVM includes
+#include <llvm/MC/MCAsmInfo.h>
+#include <llvm/MC/MCContext.h>
+#include <llvm/MC/MCDisassembler/MCDisassembler.h>
+#include <llvm/MC/MCInstrInfo.h>
+#include <llvm/MC/MCRegisterInfo.h>
+#include <llvm/MC/MCSubtargetInfo.h>
+#include <llvm/MC/MCTargetOptions.h>
+#include <llvm/MC/TargetRegistry.h>
+#include <llvm/Support/Error.h>
+#include <llvm/Support/MemoryBuffer.h>
+#include <llvm/Support/raw_ostream.h>
+#include <llvm/Support/TargetSelect.h>
+#include <llvm/TargetParser/Triple.h>
 
 namespace rellume {
+
+llvm::MCDisassembler * getDisAsm();
 
 class Instr {
     Arch arch;
@@ -57,6 +75,9 @@ class Instr {
 #ifdef RELLUME_WITH_AARCH64
         farmdec::Inst _a64;
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_MIPSEL32
+        llvm::MCInst* _mipsel32;
+#endif // RELLUME_WITH_MIPSEL32
     };
 
 public:
@@ -141,6 +162,12 @@ public:
         return &_a64;
     }
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_MIPSEL32
+    operator const llvm::MCInst*() const {
+        assert(arch == Arch::MIPSel32);
+        return _mipsel32;
+    }
+#endif // RELLUME_WITH_MIPSEL32
 
     /// Fill Instr with the instruction at buf and return number of consumed
     /// bytes (or negative on error). addr is the virtual address of the
@@ -175,6 +202,35 @@ public:
             break;
         }
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_MIPSEL32
+        case Arch::MIPSel32: {
+            if (len < 4) {
+                return -1;
+            }
+
+            llvm::ArrayRef<uint8_t> bytes(buf, 4);
+
+            uint64_t inst_size;
+            llvm::MCInst* inst = new llvm::MCInst();
+            llvm::MCDisassembler::DecodeStatus s = getDisAsm()->getInstruction(
+                *inst,
+                inst_size,
+                bytes,
+                addr,
+                llvm::nulls()
+            );
+
+            if (s == llvm::MCDisassembler::Success) {
+                _mipsel32 = inst;
+            } else {
+                delete inst;
+                return -1;
+            }
+
+            res = 4; // all instructions are 32 bits long
+            break;
+        }
+#endif // RELLUME_WITH_MIPSEL32
         default:
             break;
         }
@@ -183,6 +239,15 @@ public:
             instlen = res;
         return res;
     }
+
+    ~Instr() {
+  #ifdef RELLUME_WITH_MIPSEL32
+          if (_mipsel32 != nullptr && arch == Arch::MIPSel32) {
+              delete _mipsel32;
+              _mipsel32 = nullptr;
+          }
+  #endif
+      }
 };
 
 } // namespace

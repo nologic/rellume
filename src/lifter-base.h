@@ -35,9 +35,12 @@
 #include <llvm/IR/Instruction.h>
 #include <llvm/IR/IRBuilder.h>
 #include <llvm/IR/Operator.h>
+#include <llvm/MC/MCDisassembler/MCDisassembler.h>
 #include <vector>
 
 namespace rellume {
+
+llvm::MCDisassembler * getDisAsm();
 
 /**
  * \brief Architecture-independent part of lifter.

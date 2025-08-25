@@ -28,8 +28,51 @@
 
 #include <llvm/IR/Instruction.h>
 #include <llvm/Transforms/Utils/Cloning.h>
+#include <llvm/MC/MCAsmInfo.h>
+#include <llvm/MC/MCContext.h>
+#include <llvm/MC/MCDisassembler/MCDisassembler.h>
+#include <llvm/MC/MCInstrInfo.h>
+#include <llvm/MC/MCRegisterInfo.h>
+#include <llvm/MC/MCSubtargetInfo.h>
+#include <llvm/MC/MCTargetOptions.h>
+#include <llvm/MC/TargetRegistry.h>
+
 
 namespace rellume {
+
+llvm::MCDisassembler * disAsm = nullptr;
+
+llvm::MCDisassembler * getDisAsm() {
+    if(disAsm != nullptr) {
+        return disAsm;
+    }
+
+    // Initialize the target
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllDisassemblers();
+    llvm::InitializeAllAsmParsers();
+
+    std::string tripleName = "mipsel-unknown-linux";
+
+    std::string error;
+    const llvm::Target *theTarget = llvm::TargetRegistry::lookupTarget(tripleName, error);
+    if (!theTarget) {
+        llvm::errs() << "Target lookup failed: " << error << "\n";
+        return nullptr;
+    }
+
+    llvm::MCTargetOptions options;
+
+    const llvm::MCRegisterInfo * mri = theTarget->createMCRegInfo(tripleName);
+    const llvm::MCAsmInfo * mai = theTarget->createMCAsmInfo(*mri, tripleName, options);
+    const llvm::MCSubtargetInfo * sti = theTarget->createMCSubtargetInfo(tripleName, "", "");
+
+    llvm::MCContext ctx(llvm::Triple(tripleName), mai, mri, sti);
+    disAsm = theTarget->createMCDisassembler(*sti, ctx);
+
+    return disAsm;
+}
 
 llvm::Value* LifterBase::AddrConst(uint64_t addr) {
     if (addr == 0)
