@@ -38,6 +38,9 @@ enum class Arch : unsigned {
 #ifdef RELLUME_WITH_AARCH64
     AArch64, // ARM AArch64
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_MIPSEL32
+    MIPSel32, // ARM AArch64
+#endif // RELLUME_WITH_MIPSEL32
 
     // Backwards compatibility: if no architecture is specified explicitly,
     // Rellume defaults to x86-64.

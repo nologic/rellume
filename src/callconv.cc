@@ -51,6 +51,9 @@ CallConv CallConv::FromFunction(llvm::Function* fn, Arch arch) {
 #ifdef RELLUME_WITH_AARCH64
     case Arch::AArch64: hunch = AArch64_SPTR; break;
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_AARCH64
+    case Arch::MIPSel32: hunch = MIPSel32_SPTR; break;
+#endif // RELLUME_WITH_AARCH64
     default:
         return INVALID;
     }
@@ -81,6 +84,7 @@ llvm::FunctionType* CallConv::FnType(llvm::LLVMContext& ctx,
     case CallConv::X86_64_SPTR:
     case CallConv::RV64_SPTR:
     case CallConv::AArch64_SPTR:
+    case CallConv::MIPSel32_SPTR:
         return llvm::FunctionType::get(void_ty, {ptrTy}, false);
     }
 }
@@ -91,6 +95,7 @@ llvm::CallingConv::ID CallConv::FnCallConv() const {
     case CallConv::X86_64_SPTR: return llvm::CallingConv::C;
     case CallConv::RV64_SPTR: return llvm::CallingConv::C;
     case CallConv::AArch64_SPTR: return llvm::CallingConv::C;
+    case CallConv::MIPSel32_SPTR: return llvm::CallingConv::C;
     }
 }
 
@@ -100,6 +105,7 @@ unsigned CallConv::CpuStructParamIdx() const {
     case CallConv::X86_64_SPTR:  return 0;
     case CallConv::RV64_SPTR:    return 0;
     case CallConv::AArch64_SPTR: return 0;
+    case CallConv::MIPSel32_SPTR: return 0;
     }
 }
 
@@ -109,6 +115,7 @@ Arch CallConv::ToArch() const {
     case CallConv::X86_64_SPTR:  return Arch::X86_64;
     case CallConv::RV64_SPTR:    return Arch::RV64;
     case CallConv::AArch64_SPTR: return Arch::AArch64;
+    case CallConv::MIPSel32_SPTR: return Arch::AArch64;
     }
 }
 
@@ -156,6 +163,15 @@ static span<const CPUStructEntry> CPUStructEntries(CallConv cconv) {
     };
 #endif // RELLUME_WITH_AARCH64
 
+#ifdef RELLUME_WITH_MIPSEL32
+    static const CPUStructEntry cpu_struct_entries_mipsel32[] = {
+#define RELLUME_MAPPED_REG(nameu,off,reg,facet) \
+            std::make_tuple(SptrIdx::mipsel32::nameu, off, reg, facet),
+#include <rellume/cpustruct-mipsel32-private.inc>
+#undef RELLUME_MAPPED_REG
+    };
+#endif // RELLUME_WITH_MIPSEL32
+
     switch (cconv) {
     default:
         return span<const CPUStructEntry>();
@@ -171,6 +187,10 @@ static span<const CPUStructEntry> CPUStructEntries(CallConv cconv) {
     case CallConv::AArch64_SPTR:
         return cpu_struct_entries_aarch64;
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_MIPSEL32
+    case CallConv::MIPSel32_SPTR:
+        return cpu_struct_entries_mipsel32;
+#endif // RELLUME_WITH_MIPSEL32
     }
 }
 

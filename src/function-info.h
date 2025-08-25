@@ -65,6 +65,15 @@ namespace SptrIdx::aarch64 {
     };
 }
 #endif // RELLUME_WITH_AARCH64
+#ifdef RELLUME_WITH_MIPSEL32
+namespace SptrIdx::mipsel32 {
+    enum {
+#define RELLUME_MAPPED_REG(nameu,...) nameu,
+#include <rellume/cpustruct-mipsel32-private.inc>
+#undef RELLUME_MAPPED_REG
+    };
+}
+#endif // RELLUME_WITH_MIPSEL32
 
 class ArchBasicBlock;
 class RegFile;

@@ -50,6 +50,9 @@ if get_option('with_aarch64')
                          include_type: 'system')
   architectures += 'aarch64'
 endif
+if get_option('with_mipsel32')
+  architectures += 'mipsel32'
+endif
 
 foreach arch : architectures
   add_project_arguments(['-DRELLUME_WITH_@0@'.format(arch.to_upper())], language: 'cpp')
